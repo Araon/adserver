@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+bin/
+coverage.out
+.DS_Store
+.idea/
+.run/
+dump.rdb
