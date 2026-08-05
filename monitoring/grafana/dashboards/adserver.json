@@ -1,0 +1,81 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "panels": [
+    {
+      "title": "Auction rate",
+      "type": "timeseries",
+      "targets": [{"expr": "sum(rate(adserver_auctions_total[5m]))", "legendFormat": "auctions/s"}],
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}
+    },
+    {
+      "title": "Fill ratio",
+      "type": "stat",
+      "targets": [{"expr": "sum(rate(adserver_fills_total[5m])) / clamp_min(sum(rate(adserver_auctions_total[5m])), 0.001)", "legendFormat": "fill ratio"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}
+    },
+    {
+      "title": "Handler latency",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le) (rate(adserver_auction_handler_latency_microseconds_bucket[5m])))", "legendFormat": "p50"},
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(adserver_auction_handler_latency_microseconds_bucket[5m])))", "legendFormat": "p95"},
+        {"expr": "histogram_quantile(0.99, sum by (le) (rate(adserver_auction_handler_latency_microseconds_bucket[5m])))", "legendFormat": "p99"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "µs"}},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}
+    },
+    {
+      "title": "Cache failures",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "sum(rate(adserver_cache_refresh_failures_total[5m]))", "legendFormat": "refresh"},
+        {"expr": "sum(rate(adserver_cache_reconcile_failures_total[5m]))", "legendFormat": "reconcile"},
+        {"expr": "sum(rate(adserver_cache_subscription_failures_total[5m]))", "legendFormat": "subscription"}
+      ],
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8}
+    },
+    {
+      "title": "Degraded serving",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "sum(rate(adserver_served_stale_total[5m]))", "legendFormat": "served stale/s"},
+        {"expr": "sum(rate(adserver_stale_snapshot_no_bid_total[5m]))", "legendFormat": "stale no-bid/s"},
+        {"expr": "sum(rate(adserver_decision_log_dropped_total[5m]))", "legendFormat": "logs dropped/s"}
+      ],
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8}
+    },
+    {
+      "title": "Control plane",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "sum(rate(adserver_bid_mutations_total[5m]))", "legendFormat": "mutations/s"},
+        {"expr": "sum(rate(adserver_bid_mutation_errors_total[5m]))", "legendFormat": "errors/s"},
+        {"expr": "sum(rate(adserver_bad_requests_total[5m]))", "legendFormat": "bad requests/s"}
+      ],
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8}
+    },
+    {
+      "title": "Dynamic bidders",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "sum(rate(adserver_dynamic_bid_timeouts_total[5m]))", "legendFormat": "timeouts/s"},
+        {"expr": "sum(rate(adserver_dynamic_bid_failures_total[5m]))", "legendFormat": "failures/s"},
+        {"expr": "sum(rate(adserver_dynamic_bid_refresh_skipped_total[5m]))", "legendFormat": "refresh limit/s"},
+        {"expr": "sum(rate(adserver_dynamic_bid_cache_full_total[5m]))", "legendFormat": "cache full/s"},
+        {"expr": "sum(rate(adserver_dynamic_bid_circuit_open_total[5m]))", "legendFormat": "circuit open/s"}
+      ],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 41,
+  "tags": ["adserver"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Adserver Reliability",
+  "uid": "adserver-reliability",
+  "version": 1
+}

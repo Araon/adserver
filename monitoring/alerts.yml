@@ -1,0 +1,89 @@
+groups:
+  - name: adserver
+    rules:
+      - alert: AdserverTargetDown
+        expr: up{job="adserver"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Ad server metrics target is unreachable
+          description: Prometheus has been unable to scrape the ad server for one minute.
+
+      - alert: AdserverHandlerP99High
+        expr: histogram_quantile(0.99, sum by (le) (rate(adserver_auction_handler_latency_microseconds_bucket[5m]))) > 5000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Auction handler p99 exceeds 5 ms
+          description: In-process auction handler latency has exceeded its 5 ms warning budget for ten minutes.
+
+      - alert: AdserverCacheRefreshFailing
+        expr: increase(adserver_cache_refresh_failures_total[5m]) > 0 or increase(adserver_cache_reconcile_failures_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Bid cache refreshes are failing
+          description: The serving snapshot may become stale if Redis connectivity is not restored.
+
+      - alert: AdserverRedisSubscriptionUnstable
+        expr: increase(adserver_cache_subscription_failures_total[15m]) >= 3
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis invalidation subscription is repeatedly failing
+          description: Periodic reconciliation is the only repair path while Pub/Sub is unstable.
+
+      - alert: AdserverServingStaleSnapshots
+        expr: rate(adserver_served_stale_total[5m]) / clamp_min(rate(adserver_auctions_total[5m]), 0.001) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: More than 1% of auctions are using stale snapshots
+          description: Check Redis availability and cache refresh failures.
+
+      - alert: AdserverDecisionLogsDropping
+        expr: increase(adserver_decision_log_dropped_total[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: Decision diagnostic logs are being dropped
+          description: The bounded decision-log buffer is full; investigate the log sink before increasing it.
+
+      - alert: AdserverControlPlaneErrors
+        expr: rate(adserver_bid_mutation_errors_total[5m]) / clamp_min(rate(adserver_bid_mutations_total[5m]), 0.001) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: More than 5% of bid mutations are failing
+          description: Inspect Redis health, stale revisions, and control-plane clients.
+
+      - alert: AdserverBadRequestSpike
+        expr: rate(adserver_bad_requests_total[5m]) / clamp_min(rate(adserver_auctions_total[5m]), 0.001) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Invalid request rate exceeds 5%
+          description: A caller rollout or malformed traffic may be hitting the service.
+
+      - alert: AdserverDynamicBidRefreshLimited
+        expr: increase(adserver_dynamic_bid_refresh_skipped_total[5m]) > 0 or increase(adserver_dynamic_bid_cache_full_total[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: Dynamic bid refresh capacity is full
+          description: Increase capacity or reduce the number of DSP cache keys.
+
+      - alert: AdserverDynamicBiddersFailing
+        expr: increase(adserver_dynamic_bid_timeouts_total[5m]) + increase(adserver_dynamic_bid_failures_total[5m]) > 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Dynamic bidder failures exceed the limit
+          description: Check the DSP endpoints, deadlines, and circuit status.
