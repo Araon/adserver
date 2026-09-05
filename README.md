@@ -6,18 +6,9 @@ A warm auction does not call Redis or a DSP. The server ranks bids by priority, 
 
 ## Design
 
-```mermaid
-flowchart LR
-    Admin["Admin client"] -->|"versioned bid change"| Redis[(Redis)]
-    Redis -->|"invalidation"| Cache["Local bid snapshot"]
-    Redis -.->|"reconciliation"| Cache
+![Adserver architecture showing the local auction path, Redis bid distribution, background DSP refreshes, and monitoring](docs/architecture.svg)
 
-    Client["Auction client"] -->|"POST /v1/auction"| Server["Go server"]
-    Cache -->|"local read"| Server
-    DSP["DSP endpoints"] -.->|"background refresh"| Dynamic["Local DSP cache"]
-    Dynamic -->|"fresh bids"| Server
-    Server --> Decision["winner or no_bid"]
-```
+[Editable Excalidraw diagram](docs/architecture.excalidraw)
 
 Redis is the source of truth for active bids. Pub/Sub invalidations tell each server to refresh a placement.
 
